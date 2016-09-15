@@ -5,9 +5,9 @@ import http from 'http';
 import socketIO from 'socket.io';
 import amqp from 'amqplib';
 import uuid from 'uuid';
+import winston from 'winston';
 
-const rabbitmqHost = process.env.RABBITMQ_PORT_5672_TCP_ADDR || 'localhost';
-const rabbitmqPort = process.env.RABBITMQ_PORT_5672_TCP_PORT || 5672;
+const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
 
 const app = express();
 const server = http.createServer(app);
@@ -18,8 +18,27 @@ const corrToSock = {}; // correlation ID to socket ID map
 server.listen(3001);
 io.set('origins', '*:*');
 
+const connectToRabbitMQ = new Promise(resolve => {
+  function openConnection() {
+    winston.info('Connecting to RabbitMQ...');
+    amqp.connect(rabbitmqUrl)
+      .then(conn => {
+        winston.info('Connected!');
+        resolve(conn);
+      })
+      .catch(() => {
+        winston.info('Connection failure. Retry in 5 sec.');
+        setTimeout(() => {
+          openConnection();
+        }, 5000);
+      });
+  }
+
+  openConnection();
+});
+
 io.on('connection', socket => {
-  amqp.connect(`amqp://${rabbitmqHost}:${rabbitmqPort}`)
+  connectToRabbitMQ
     .then(conn => conn.createChannel())
     .then(ch => {
       ch.assertQueue(`decisions.load.listener.${nodeId}`, { exclusive: true })
