@@ -11,12 +11,11 @@ const rabbitmqUrl = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = socketIO(server, { path: '/' });
 const nodeId = uuid.v4();
 const corrToSock = {}; // correlation ID to socket ID map
 
 server.listen(3001);
-io.set('origins', '*:*');
 
 const connectToRabbitMQ = new Promise(resolve => {
   function openConnection() {
