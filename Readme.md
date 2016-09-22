@@ -5,6 +5,9 @@ docker build -t osbb/asyncapi-service . --no-cache
 
 # Run
 ```
-docker run -d --hostname rabbitmq --name rabbitmq rabbitmq:3
-docker run -d -p 3001:3001 --link mongo --name asyncapi osbb/asyncapi-service
+git clone git@github.com:osbb/osbb.git
+cd osbb
+docker-compose up -d
 ```
+
+More information [here](https://github.com/osbb/osbb).
