@@ -110,6 +110,76 @@ io.on('connection', socket => {
           });
         });
 
+      ch.assertQueue(`flats.load.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('LOAD_FLATS', data);
+          }, { noAck: true });
+
+          socket.on('LOAD_FLATS', () => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'flats.load',
+              new Buffer(JSON.stringify(null)),
+              {
+                persistent: true,
+                correlationId,
+                replyTo: q.queue,
+              }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
+      ch.assertQueue(`flats.update.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('UPDATE_FLAT', data);
+          }, { noAck: true });
+
+          socket.on('UPDATE_FLAT', flat => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'flats.update',
+              new Buffer(JSON.stringify(flat)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
+      ch.assertQueue(`flats.create.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('CREATE_FLAT', data);
+          }, { noAck: true });
+
+          socket.on('CREATE_FLAT', flat => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'flats.create',
+              new Buffer(JSON.stringify(flat)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
       ch.assertQueue(`auth.login.listener.${nodeId}`, { exclusive: true })
         .then(q => {
           ch.consume(q.queue, msg => {
