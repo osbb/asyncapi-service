@@ -109,5 +109,27 @@ io.on('connection', socket => {
             corrToSock[correlationId] = socket.id;
           });
         });
+
+      ch.assertQueue(`auth.login.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('LOGIN', data);
+          }, { noAck: true });
+
+          socket.on('LOGIN', data => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'auth.login',
+              new Buffer(JSON.stringify(data)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
     });
 });
