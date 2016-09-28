@@ -180,6 +180,76 @@ io.on('connection', socket => {
           });
         });
 
+      ch.assertQueue(`houses.load.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('LOAD_HOUSES', data);
+          }, { noAck: true });
+
+          socket.on('LOAD_HOUSES', () => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'houses.load',
+              new Buffer(JSON.stringify(null)),
+              {
+                persistent: true,
+                correlationId,
+                replyTo: q.queue,
+              }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
+      ch.assertQueue(`houses.update.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('UPDATE_HOUSE', data);
+          }, { noAck: true });
+
+          socket.on('UPDATE_HOUSE', house => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'houses.update',
+              new Buffer(JSON.stringify(house)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
+      ch.assertQueue(`houses.create.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('CREATE_HOUSE', data);
+          }, { noAck: true });
+
+          socket.on('CREATE_HOUSE', house => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'houses.create',
+              new Buffer(JSON.stringify(house)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
       ch.assertQueue(`auth.login.listener.${nodeId}`, { exclusive: true })
         .then(q => {
           ch.consume(q.queue, msg => {
