@@ -250,6 +250,76 @@ io.on('connection', socket => {
           });
         });
 
+      ch.assertQueue(`services.load.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('LOAD_SERVICES', data);
+          }, { noAck: true });
+
+          socket.on('LOAD_SERVICES', () => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'services.load',
+              new Buffer(JSON.stringify(null)),
+              {
+                persistent: true,
+                correlationId,
+                replyTo: q.queue,
+              }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
+      ch.assertQueue(`services.update.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('UPDATE_SERVICE', data);
+          }, { noAck: true });
+
+          socket.on('UPDATE_SERVICE', service => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'services.update',
+              new Buffer(JSON.stringify(service)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
+      ch.assertQueue(`services.create.listener.${nodeId}`, { exclusive: true })
+        .then(q => {
+          ch.consume(q.queue, msg => {
+            const socketId = corrToSock[msg.properties.correlationId];
+            const data = JSON.parse(msg.content.toString());
+            io.to(socketId).emit('CREATE_SERVICE', data);
+          }, { noAck: true });
+
+          socket.on('CREATE_SERVICE', service => {
+            const correlationId = uuid.v4();
+
+            ch.assertExchange('events', 'topic', { durable: true });
+            ch.publish(
+              'events',
+              'services.create',
+              new Buffer(JSON.stringify(service)),
+              { persistent: true, correlationId, replyTo: q.queue }
+            );
+            corrToSock[correlationId] = socket.id;
+          });
+        });
+
       ch.assertQueue(`auth.login.listener.${nodeId}`, { exclusive: true })
         .then(q => {
           ch.consume(q.queue, msg => {
