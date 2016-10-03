@@ -62,6 +62,12 @@ io.on('connection', socket => {
       router.route('LOAD_SERVICES', 'services.load');
       router.route('UPDATE_SERVICE', 'services.update');
       router.route('CREATE_SERVICE', 'services.create');
+      router.route('LOAD_USERS', 'users.load');
+      router.route('UPDATE_USER', 'users.update');
+      router.route('CREATE_USER', 'users.create');
+      router.route('LOAD_COOPERATIVES', 'cooperatives.load');
+      router.route('UPDATE_COOPERATIVE', 'cooperatives.update');
+      router.route('CREATE_COOPERATIVE', 'cooperatives.create');
       router.route('LOGIN', 'auth.login');
       router.route('LOGOUT', 'auth.logout');
     });
