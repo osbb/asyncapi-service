@@ -50,9 +50,9 @@ io.on('connection', socket => {
     .then(conn => conn.createChannel())
     .then(ch => {
       const router = new Router(ch, socket);
-      router.route('LOAD_DECISIONS', 'decisions.load');
-      router.route('UPDATE_DECISION', 'decisions.update');
-      router.route('CREATE_DECISION', 'decisions.create');
+      router.route('LOAD_POLLS', 'polls.load');
+      router.route('UPDATE_POLL', 'polls.update');
+      router.route('CREATE_POLL', 'polls.create');
       router.route('LOAD_FLATS', 'flats.load');
       router.route('UPDATE_FLAT', 'flats.update');
       router.route('CREATE_FLAT', 'flats.create');
