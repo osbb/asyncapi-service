@@ -26,11 +26,12 @@ class Router {
         this.ch.consume(q.queue, msg => {
           const socketId = corrToSock[msg.properties.correlationId];
           const data = JSON.parse(msg.content.toString());
-          io.to(socketId).emit(event, data);
+          io.to(socketId).emit(event, { data, correlationId: msg.properties.correlationId });
         }, { noAck: true });
 
-        this.socket.on(event, data => {
-          const correlationId = uuid.v4();
+        this.socket.on(event, payload => {
+          const correlationId = payload.correlationId || uuid.v4();
+          const { data } = payload;
 
           this.ch.assertExchange('events', 'topic', { durable: true });
           this.ch.publish(
