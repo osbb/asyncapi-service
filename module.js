@@ -71,6 +71,10 @@ io.on('connection', socket => {
       router.route('UPDATE_USER', 'users.update');
       router.route('CREATE_USER', 'users.create');
       router.route('DELETE_USER', 'users.delete');
+      router.route('LOAD_TRANSACTIONS', 'transactions.load');
+      router.route('UPDATE_TRANSACTION', 'transactions.update');
+      router.route('CREATE_TRANSACTION', 'transactions.create');
+      router.route('DELETE_TRANSACTION', 'transactions.delete');
       router.route('LOAD_COOPERATIVES', 'cooperatives.load');
       router.route('UPDATE_COOPERATIVE', 'cooperatives.update');
       router.route('CREATE_COOPERATIVE', 'cooperatives.create');
